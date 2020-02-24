@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Пользователи в сети</title>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js"></script>
+    <link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<header>
+    <h1 align="center" style="color: crimson">Пользователи в сети</h1>
+</header>
+<body>
+    <div class="messages"></div>
+</body>
+<script>
+        $.ajax({
+            url: "authentication",
+            type: "GET",
+            success: [function (fromserver) {
+                if(fromserver == null)
+                    return;
+                for (var i = 0; i < fromserver.length; i++) {
+                    $('.messages').append("<p>" +  fromserver[i].name + "</p>");
+                }
+            }]
+        });
+</script>
+</html>
