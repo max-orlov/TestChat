@@ -1,5 +1,6 @@
 package servlets;
 
+import com.google.gson.Gson;
 import dataBase.UserDao;
 import model.User;
 import org.apache.commons.fileupload.FileItemIterator;
@@ -28,19 +29,22 @@ public class UserImgServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setCharacterEncoding("UTF-8");
-        String id;
+        String id = null;
         if (req.getParameter("id") != null)
             id = req.getParameter("id");
         else if (req.getParameter("name") != null) {
             String name = req.getParameter("name");
-            User user = null;
             try {
-                user = UserDao.getByName(name);
+                User user = UserDao.getByName(name);
+                if (user == null) {
+                    resp.getWriter().write(new Gson().toJson(new Error("Picture is not found")));
+                    return;
+                }
+                id = String.valueOf(user.getId());
             } catch (SQLException e) {
-                e.printStackTrace();
+                resp.getWriter().write(new Gson().toJson(new Error("Server error.")));
                 logger.error(e.getMessage());
             }
-            id = String.valueOf(user.getId());
         } else
             return;
 
@@ -91,7 +95,7 @@ public class UserImgServlet extends HttpServlet {
                 User user = new User();
                 String uploadPath = "usersImages";
                 File tempDir = new File(uploadPath + File.separator + "temp");
-                if(!tempDir.exists()){
+                if (!tempDir.exists()) {
                     tempDir.mkdirs();
                 }
                 String filePathSrc = null;
@@ -125,23 +129,24 @@ public class UserImgServlet extends HttpServlet {
                 }
                 try {
                     UserDao.addUser(user);
+                    if (filePathSrc != null) {
+                        String[] split = filePathSrc.split("\\.");
+                        if (split.length > 1) {
+                            String extension = split[split.length - 1];
+                            Files.move(new File(filePathSrc).toPath(),
+                                    new File(uploadPath + File.separator
+                                            + user.getId() + "." + extension).toPath(),
+                                    StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    }
+                    resp.sendRedirect("login.html");
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    resp.getWriter().write(new Gson().toJson(new Error("Server error.")));
                     logger.error(e.getMessage());
                 }
-
-                if (filePathSrc != null) {
-                    String[] split = filePathSrc.split("\\.");
-                    if (split.length > 1) {
-                        String extension = split[split.length - 1];
-                        Files.move(new File(filePathSrc).toPath(),
-                                new File(uploadPath + File.separator
-                                        + user.getId() + "." + extension).toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    }
-                }
-                resp.sendRedirect("login.html");
             } catch (FileUploadException e) {
-                System.out.println(e.getMessage());
+                logger.info(e.getMessage());
+                resp.getWriter().write(new Gson().toJson(new Error("Server error.")));
             }
         }
     }

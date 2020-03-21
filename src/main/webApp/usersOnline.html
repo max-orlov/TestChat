@@ -5,24 +5,29 @@
     <title>Пользователи в сети</title>
     <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js"></script>
     <link href="style.css" rel="stylesheet" type="text/css">
+    <script>
+        if ($.cookie('userId') == null || $.cookie('userName') == null)
+            $(location).attr('href', 'index.html');
+    </script>
 </head>
 <header>
     <h1 align="center" style="color: crimson">Пользователи в сети</h1>
 </header>
 <body>
     <div class="messages"></div>
-</body>
-<script>
+    <script>
         $.ajax({
-            url: "authentication",
+            url: "usersOnline",
             type: "GET",
             success: [function (fromserver) {
-                if(fromserver == null)
-                    return;
-                for (var i = 0; i < fromserver.length; i++) {
-                    $('.messages').append("<p>" +  fromserver[i].name + "</p>");
+                for(var i = 0; i < fromserver.length; i++) {
+                    $('.messages').append("<p>" + fromserver[i] + "</p>");
                 }
+            }],
+            error: [function (e) {
+                alert("Error" + JSON.stringify(e))
             }]
         });
-</script>
+    </script>
+</body>
 </html>

@@ -6,42 +6,15 @@ import org.apache.log4j.Logger;
 import java.sql.*;
 
 public class UserDao {
-    private static Connection conn = null;
-    private static final String URL = "jdbc:postgresql://localhost:5432/my_chat";
-    private static final String USER = "postgres";
-    private static final String PASSWORD = "root";
 
     private static final Logger logger = Logger.getLogger(UserDao.class);
-
-    static {
-        {
-            try {
-                Class.forName("org.postgresql.Driver");
-                conn = DriverManager.getConnection(URL, USER, PASSWORD);
-                logger.info("Connection successful");
-            } catch (SQLException e) {
-                logger.error(e.getMessage());
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                logger.error(e.getMessage());
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public static void closeConnection() {
-        try {
-            conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+    private static Connection conn = DAO.getConn();
 
     public static User getByName(String userName) throws SQLException {
         PreparedStatement ps = conn.prepareStatement("select * from users where name = ?");
         ps.setString(1, userName);
         ResultSet rs = ps.executeQuery();
-        Long id = 0L;
+        long id = 0L;
         String name = null;
         String FIO = "";
         String tel = "";
@@ -60,7 +33,7 @@ public class UserDao {
         }
         User user = new User(id, name, FIO, tel, e_mail, password);
         ps.close();
-        logger.info("User " + "'" + user.getName() + "'" + " have been founded");
+        logger.info("User '" + user.getName() + "' have been founded");
         return user;
     }
 
@@ -87,20 +60,24 @@ public class UserDao {
         }
         User user = new User(id, name, FIO, tel, e_mail, password);
         ps.close();
-        logger.info("User " + "'" + user.getName() + "'" + " have been founded");
+        logger.info("User '" + user.getName() + "' have been founded");
         return user;
     }
 
     public static void addUser(User user) throws SQLException {
-        PreparedStatement ps = conn.prepareStatement("insert into users(name, fio, tel, e_mail, password) values(?, ?, ?, ?, ?)");
+        PreparedStatement ps = conn.prepareStatement("insert into users(name, fio, tel, e_mail, password) values(?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
         ps.setString(1, user.getName());
         ps.setString(2, user.getFIO());
         ps.setString(3, user.getTel());
         ps.setString(4, user.getE_mail());
         ps.setString(5, user.getPassword());
         ps.execute();
+        ResultSet generatedKeys = ps.getGeneratedKeys();
+        generatedKeys.next();
+        long id = generatedKeys.getLong(1);
+        user.setId(id);
         ps.close();
-        logger.info("User " + "'" + user.getName() + "'" + " have been added");
+        logger.info("User '" + user.getName() + "' have been added");
     }
 
 }

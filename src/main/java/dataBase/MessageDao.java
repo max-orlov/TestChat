@@ -10,42 +10,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MessageDao {
-    private static Connection conn = null;
-    private static final String URL = "jdbc:postgresql://localhost:5432/my_chat";
-    private static final String USER = "postgres";
-    private static final String PASSWORD = "root";
 
     private static Logger logger = Logger.getLogger(MessageDao.class);
-
-    static {
-        {
-            try {
-                Class.forName("org.postgresql.Driver");
-                conn = DriverManager.getConnection(URL, USER, PASSWORD);
-                logger.info("Connection successful");
-            } catch (SQLException e) {
-                e.printStackTrace();
-                logger.error(e.getMessage());
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-                logger.error(e.getMessage());
-            }
-        }
-    }
-
-    public static void closeConnection() {
-        try {
-            conn.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+    private static Connection conn = DAO.getConn();
 
     public static List<Message> getAllMessages() throws SQLException {
         List<Message> messages = new ArrayList<>();
         PreparedStatement ps = conn.prepareStatement("select * from messages");
         ResultSet rs = ps.executeQuery();
-        Long id;
+        long id;
         Date date;
         String text;
         User user;
@@ -68,7 +41,7 @@ public class MessageDao {
         ps.setLong(3, message.getUser().getId());
         ps.execute();
         ps.close();
-        logger.info("User " + "'" + message.getUser().getName() + "'" + " sent message " + "\"" +
+        logger.info("User '" + message.getUser().getName() + "' sent message: " + "\"" +
                 message.getText() + "\"");
     }
 }

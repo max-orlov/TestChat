@@ -1,5 +1,6 @@
 package servlets;
 
+import com.google.gson.Gson;
 import dataBase.UserDao;
 import model.User;
 import org.apache.log4j.Logger;
@@ -23,25 +24,31 @@ public class UserInfoServlet extends HttpServlet {
         resp.setContentType("application/json;charset=UTF8");
         if (req.getParameter("id") != null) {
             String id = req.getParameter("id");
-            User user = null;
             try {
-                user = UserDao.getById(Long.valueOf(id));
+                User user = UserDao.getById(Long.valueOf(id));
+                if(user == null){
+                    resp.getWriter().write("null");
+                    return;
+                }
+                resp.getWriter().write(user.toString());
             } catch (SQLException e) {
                 logger.error(e.getMessage());
-                e.printStackTrace();
+                resp.getWriter().write(new Gson().toJson(new Error("Server error.")));
             }
-            resp.getWriter().write(user.toString());
         }
         if (req.getParameter("name") != null) {
             String name = req.getParameter("name");
-            User user = null;
             try {
-                user = UserDao.getByName(name);
+                User user = UserDao.getByName(name);
+                if(user == null){
+                    resp.getWriter().write("null");
+                    return;
+                }
+                resp.getWriter().write(user.toString());
             } catch (SQLException e) {
                 logger.error(e.getMessage());
-                e.printStackTrace();
+                resp.getWriter().write(new Gson().toJson(new Error("Server error.")));
             }
-            resp.getWriter().write(user.toString());
         }
     }
 }

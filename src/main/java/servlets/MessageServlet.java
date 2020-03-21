@@ -3,6 +3,7 @@ package servlets;
 import com.google.gson.Gson;
 import dataBase.MessageDao;
 import dataBase.UserDao;
+import model.Error;
 import model.Message;
 import model.User;
 import org.apache.log4j.Logger;
@@ -34,11 +35,11 @@ public class MessageServlet extends HttpServlet {
     private Thread thread = new Thread(new Runnable() {
         @Override
         public void run() {
-            while (run){
+            while (run) {
                 try {
                     Message message = messageBlockingQueue.take();
 
-                    for(AsyncContext asyncContext : asyncContextMap.values()){
+                    for (AsyncContext asyncContext : asyncContextMap.values()) {
                         try {
                             sendMessage(asyncContext.getResponse().getWriter(), message);
                         } catch (IOException e) {
@@ -54,7 +55,7 @@ public class MessageServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if(req.getHeader("Accept").equals("text/event-stream")){
+        if (req.getHeader("Accept").equals("text/event-stream")) {
 
             resp.setContentType("text/event-stream");
             resp.setHeader("Connection", "keep-alive");
@@ -83,19 +84,20 @@ public class MessageServlet extends HttpServlet {
                 }
 
                 @Override
-                public void onStartAsync(AsyncEvent asyncEvent) throws IOException {}
+                public void onStartAsync(AsyncEvent asyncEvent) throws IOException {
+                }
             });
 
             asyncContextMap.put(id, asyncContext);
             System.out.println(asyncContextMap);
-        }
-        else {
+        } else {
             resp.setContentType("application/json;charset=UTF8");
             List messages = null;
             try {
                 messages = MessageDao.getAllMessages();
             } catch (SQLException e) {
-                e.printStackTrace();
+                resp.getWriter().write(new Gson().toJson(new Error("Can't get messages")));
+                logger.info("Can't get messages");
             }
             Collections.reverse(messages);
             resp.getWriter().write(new Gson().toJson(messages));
@@ -105,30 +107,30 @@ public class MessageServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         resp.setContentType("application/json;charset=UTF8");
-        if(req.getParameter("text") != null && req.getParameter("userId") != null) {
+        if (req.getParameter("text") != null && req.getParameter("userId") != null) {
             Long userId = Long.parseLong(req.getParameter("userId"));
-            User user = null;
+
             try {
-                user = UserDao.getById(userId);
-            } catch (SQLException e) {
-                logger.error(e.getMessage());
-                e.printStackTrace();
-            }
-            String text = req.getParameter("text");
-            Date date = new Date();
-            Message message = new Message(date, text, user);
-            try {
+                User user = UserDao.getById(userId);
+
+                String text = req.getParameter("text");
+                text = text.replace("&", "&amp;").replace("\"", "&quot;")
+                        .replace("'", "&#039;").replace("<", "&lt;")
+                        .replace(">", "&gt;");
+
+                Date date = new Date();
+                Message message = new Message(date, text, user);
                 MessageDao.addMessage(message);
+                resp.getWriter().write(message.toString());
+                messageBlockingQueue.add(message);
             } catch (SQLException e) {
                 logger.error(e.getMessage());
-                e.printStackTrace();
+                resp.getWriter().write(new Gson().toJson(new Error(e.getMessage())));
             }
-            resp.getWriter().write(message.toString());
-            messageBlockingQueue.add(message);
         }
     }
 
-    private void sendMessage(PrintWriter writer, Message message){
+    private void sendMessage(PrintWriter writer, Message message) {
         writer.println("data: " + message);
         writer.println();
         writer.flush();

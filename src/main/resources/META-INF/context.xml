@@ -1,0 +1,13 @@
+<Context>
+    <WatchedResource>WEB-INF/web.xml</WatchedResource>
+    <Resource name="jdbc/postgres"
+              auth="Container"
+              type="javax.sql.DataSource"
+              driverClassName="org.postgresql.Driver"
+              url="jdbc:postgresql://localhost:5432/my_chat"
+              username="postgres"
+              password="root"
+              maxActive="20"
+              maxIdle="10"
+              maxWait="10000"/>
+</Context>
