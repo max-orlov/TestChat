@@ -114,9 +114,9 @@ public class MessageServlet extends HttpServlet {
                 User user = UserDao.getById(userId);
 
                 String text = req.getParameter("text");
-                text = text.replace("&", "&amp;").replace("\"", "&quot;")
+                /*text = text.replace("&", "&amp;").replace("\"", "&quot;")
                         .replace("'", "&#039;").replace("<", "&lt;")
-                        .replace(">", "&gt;");
+                        .replace(">", "&gt;");*/
 
                 Date date = new Date();
                 Message message = new Message(date, text, user);
